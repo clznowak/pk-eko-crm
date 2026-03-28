@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PK-EKO CRM</title>
+<style>
+:root {
+  --green: #1D9E75;
+  --green-dark: #0F6E56;
+  --green-pale: #E1F5EE;
+  --navy: #1B2A4A;
+  --amber: #BA7517;
+  --amber-pale: #FAEEDA;
+  --red: #A32D2D;
+  --red-pale: #FCEBEB;
+  --bg: #F4F6F8;
+  --surface: #FFFFFF;
+  --border: #E2E8F0;
+  --text: #1B2A4A;
+  --muted: #64748B;
+  --sidebar-w: 220px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* AUTH SCREEN */
+#auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 24px; }
+.auth-card { background: var(--surface); border-radius: 16px; padding: 40px; text-align: center; border: 1px solid var(--border); max-width: 400px; width: 90%; }
+.auth-logo { font-size: 32px; font-weight: 700; color: var(--green); margin-bottom: 8px; }
+.auth-sub { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+.auth-btn { display: inline-flex; align-items: center; gap: 10px; background: var(--green); color: white; border: none; border-radius: 10px; padding: 14px 28px; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; justify-content: center; }
+.auth-btn:hover { background: var(--green-dark); }
+.auth-note { font-size: 12px; color: var(--muted); margin-top: 16px; }
+
+/* APP LAYOUT */
+#app { display: none; min-height: 100vh; }
+.layout { display: flex; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar { width: var(--sidebar-w); background: var(--navy); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; }
+.sidebar-logo { padding: 20px 18px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.logo-main { font-size: 20px; font-weight: 700; color: #8DC63F; }
+.logo-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; letter-spacing: 0.5px; }
+.nav { padding: 12px 0; flex: 1; }
+.nav-section { padding: 12px 18px 4px; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 18px; font-size: 13px; color: rgba(255,255,255,0.6); cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
+.nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
+.nav-item.active { color: white; background: rgba(255,255,255,0.1); border-left-color: #8DC63F; }
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-user { padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px; }
+.user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: white; flex-shrink: 0; }
+.user-name { font-size: 12px; color: rgba(255,255,255,0.7); }
+.user-role { font-size: 11px; color: rgba(255,255,255,0.35); }
+.logout-btn { margin-left: auto; background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 16px; }
+.logout-btn:hover { color: rgba(255,255,255,0.7); }
+
+/* MAIN CONTENT */
+.main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+.topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 58px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+.topbar-title { font-size: 17px; font-weight: 600; }
+.topbar-actions { display: flex; gap: 10px; align-items: center; }
+.content { padding: 24px; flex: 1; }
+
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); transition: all 0.15s; }
+.btn:hover { background: var(--bg); }
+.btn-primary { background: var(--green); color: white; border-color: var(--green); }
+.btn-primary:hover { background: var(--green-dark); border-color: var(--green-dark); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-danger { background: var(--red-pale); color: var(--red); border-color: #f5c6c6; }
+
+/* SEARCH */
+.search-wrap { position: relative; }
+.search-wrap input { padding: 7px 12px 7px 32px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; width: 220px; outline: none; background: var(--bg); }
+.search-wrap input:focus { border-color: var(--green); background: white; }
+.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; }
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; }
+.stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+.stat-val { font-size: 28px; font-weight: 700; line-height: 1; }
+.stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* KANBAN */
+.kanban { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+.kanban-col { background: var(--bg); border-radius: 10px; padding: 12px; min-height: 300px; }
+.col-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.col-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
+.col-count { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 1px 7px; font-size: 11px; font-weight: 600; color: var(--muted); }
+.kanban-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 11px 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; }
+.kanban-card:hover { border-color: var(--green); box-shadow: 0 2px 8px rgba(29,158,117,0.1); transform: translateY(-1px); }
+.k-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.k-loc { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.k-foot { display: flex; justify-content: space-between; align-items: center; }
+.k-val { font-size: 12px; font-weight: 600; color: var(--green); }
+
+/* BADGES */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+.b-new { background: #EEF2FF; color: #3730A3; }
+.b-offer { background: var(--amber-pale); color: var(--amber); }
+.b-signed { background: var(--green-pale); color: var(--green-dark); }
+.b-install { background: #FFF3E0; color: #C2410C; }
+.b-done { background: #F0FDF4; color: #15803D; }
+.b-overdue { background: var(--red-pale); color: var(--red); }
+.b-service { background: #F3E5F5; color: #6A1B9A; }
+
+/* TABLE */
+.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+.table-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.table-title { font-size: 14px; font-weight: 600; }
+table { width: 100%; border-collapse: collapse; }
+th { padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; background: #FAFBFC; border-bottom: 1px solid var(--border); }
+td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #FAFBFC; }
+.td-name { font-weight: 600; }
+.td-muted { color: var(--muted); }
+
+/* SERWIS CARDS */
+.serwis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+.serwis-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; border-left: 4px solid var(--green); }
+.serwis-card.warn { border-left-color: #F59E0B; }
+.serwis-card.danger { border-left-color: var(--red); }
+.sc-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.sc-info { font-size: 12px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+.sc-foot { display: flex; justify-content: space-between; align-items: center; }
+.sc-date { font-size: 12px; font-weight: 600; }
+.sc-date.ok { color: var(--green); }
+.sc-date.warn { color: var(--amber); }
+.sc-date.danger { color: var(--red); }
+
+/* MODAL */
+.modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; }
+.modal-backdrop.open { display: flex; }
+.modal { background: var(--surface); border-radius: 14px; width: 500px; max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.modal-head { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.modal-title { font-size: 15px; font-weight: 600; }
+.modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted); padding: 4px; }
+.modal-body { padding: 18px 20px; }
+.modal-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 5px; }
+.form-control { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--text); outline: none; transition: border 0.15s; background: white; }
+.form-control:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(29,158,117,0.1); }
+textarea.form-control { resize: vertical; min-height: 80px; }
+
+/* VIEWS */
+.view { display: none; }
+.view.active { display: block; }
+
+/* LOADING */
+.loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+.spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* PROGRESS */
+.progress { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 4px; background: var(--green); }
+
+/* DETAIL PANEL */
+.detail-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.detail-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.detail-item { }
+.detail-label { font-size: 11px; color: var(--muted); font-weight: 500; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+.detail-val { font-size: 14px; font-weight: 500; }
+
+/* SYNC STATUS */
+.sync-status { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+.sync-dot.syncing { background: var(--amber); animation: pulse 1s ease-in-out infinite; }
+.sync-dot.error { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* TOAST */
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--navy); color: white; padding: 12px 18px; border-radius: 10px; font-size: 13px; z-index: 999; transform: translateY(100px); opacity: 0; transition: all 0.3s; }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { background: var(--green-dark); }
+.toast.error { background: var(--red); }
+
+@media (max-width: 900px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .kanban { grid-template-columns: 1fr 1fr; }
+  .serwis-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">🌿 PK-EKO</div>
+    <div style="font-size:22px;font-weight:700;margin-bottom:6px;">CRM System</div>
+    <div class="auth-sub">Profesjonalnie / Kompleksowo / Ekologicznie</div>
+    <button class="auth-btn" onclick="signIn()">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="white" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="white" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="white" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="white" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Zaloguj się przez Google
+    </button>
+    <div class="auth-note">Twoje dane są bezpieczne i synchronizowane z Google Sheets</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-main">PK-EKO.pl</div>
+        <div class="logo-sub">PROFESJONALNIE / KOMPLEKSOWO</div>
+      </div>
+      <nav class="nav">
+        <div class="nav-section">Sprzedaż</div>
+        <div class="nav-item active" onclick="showView('pipeline',this)"><span class="nav-icon">📋</span>Lejek sprzedaży</div>
+        <div class="nav-item" onclick="showView('leady',this)"><span class="nav-icon">👥</span>Klienci i leady</div>
+        <div class="nav-section">Realizacja</div>
+        <div class="nav-item" onclick="showView('montaze',this)"><span class="nav-icon">🔧</span>Montaże</div>
+        <div class="nav-item" onclick="showView('serwis',this)"><span class="nav-icon">🔁</span>Serwis i przeglądy</div>
+      </nav>
+      <div class="sidebar-user">
+        <div class="user-avatar" id="user-initials">?</div>
+        <div>
+          <div class="user-name" id="user-name">Ładowanie...</div>
+          <div class="user-role">PK-EKO CRM</div>
+        </div>
+        <button class="logout-btn" onclick="signOut()" title="Wyloguj">⎋</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-title" id="topbar-title">Lejek sprzedaży</div>
+        <div class="topbar-actions">
+          <div class="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Zsynchronizowano</span></div>
+          <button class="btn" onclick="loadData()">↻ Odśwież</button>
+          <button class="btn btn-primary" onclick="openNewLead()">+ Nowy lead</button>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- PIPELINE VIEW -->
+        <div id="v-pipeline" class="view active">
+          <div class="stats-grid" id="stats-grid">
+            <div class="stat-card"><div class="stat-label">Nowe zapytania</div><div class="stat-val" id="s-new" style="color:#3730A3">—</div><div class="stat-sub">w lejku</div></div>
+            <div class="stat-card"><div class="stat-label">Oferty wysłane</div><div class="stat-val" id="s-offer" style="color:var(--amber)">—</div><div class="stat-sub">czekają na decyzję</div></div>
+            <div class="stat-card"><div class="stat-label">Umowy podpisane</div><div class="stat-val" id="s-signed" style="color:var(--green)">—</div><div class="stat-sub" id="s-signed-val">—</div></div>
+            <div class="stat-card"><div class="stat-label">Zrealizowane</div><div class="stat-val" id="s-done" style="color:#15803D">—</div><div class="stat-sub" id="s-done-val">—</div></div>
+          </div>
+          <div class="kanban" id="kanban-board">
+            <div class="loading"><span class="spinner"></span>Ładowanie danych...</div>
+          </div>
+        </div>
+
+        <!-- LEADY VIEW -->
+        <div id="v-leady" class="view">
+          <div class="table-card">
+            <div class="table-header">
+              <div class="table-title">Wszyscy klienci i leady</div>
+              <div class="search-wrap"><span class="search-icon">🔍</span><input placeholder="Szukaj..." id="search-leady" oninput="filterLeady()"></div>
+            </div>
+            <div id="leady-table-wrap"><div class="loading"><span class="spinner"></span>Ładowanie...</div></div>
+          </div>
+        </div>
+
+        <!-- MONTAZE VIEW -->
+        <div id="v-montaze" class="view">
+          <div class="table-card">
+            <div class="table-header">
+              <div class="table-title">Harmonogram montaży</div>
+              <button class="btn btn-primary btn-sm" onclick="openNewMontaz()">+ Nowy montaż</button>
+            </div>
+            <div id="montaze-table-wrap"><div class="loading"><span class="spinner"></span>Ładowanie...</div></div>
+          </div>
+        </div>
+
+        <!-- SERWIS VIEW -->
+        <div id="v-serwis" class="view">
+          <div id="serwis-alerts"></div>
+          <div class="table-card">
+            <div class="table-header">
+              <div class="table-title">Wszystkie przeglądy</div>
+              <button class="btn btn-primary btn-sm" onclick="openNewSerwis()">+ Nowy przegląd</button>
+            </div>
+            <div id="serwis-table-wrap"><div class="loading"><span class="spinner"></span>Ładowanie...</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOWY LEAD -->
+<div class="modal-backdrop" id="modal-lead">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modal-lead-title">Nowy lead</div>
+      <button class="modal-close" onclick="closeModal('modal-lead')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="lead-row-id">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Imię i nazwisko *</label><input class="form-control" id="l-name" placeholder="Jan Kowalski"></div>
+        <div class="form-group"><label class="form-label">Telefon *</label><input class="form-control" id="l-phone" placeholder="600 123 456"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Email</label><input class="form-control" id="l-email" placeholder="jan@email.com" type="email"></div>
+        <div class="form-group"><label class="form-label">Miejscowość</label><input class="form-control" id="l-city" placeholder="Myślenice"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Typ instalacji</label>
+          <select class="form-control" id="l-type">
+            <option>Do ustalenia</option>
+            <option>Złoże obrotowe (BioDisc)</option>
+            <option>Biologiczna SBR</option>
+            <option>Złoże fluidalne</option>
+            <option>Drenażowa</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Liczba RLM</label>
+          <select class="form-control" id="l-rlm">
+            <option>Do ustalenia</option>
+            <option>1–4 osoby</option>
+            <option>5–8 osób</option>
+            <option>9–12 osób</option>
+            <option>Ponad 12 osób</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Źródło leada</label>
+          <select class="form-control" id="l-source">
+            <option>Facebook Ads</option>
+            <option>Landing page</option>
+            <option>Wizytówka Google</option>
+            <option>Polecenie</option>
+            <option>OLX</option>
+            <option>Allegro</option>
+            <option>Inne</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-control" id="l-status">
+            <option>Nowe zapytanie</option>
+            <option>Kwalifikacja</option>
+            <option>Wizja lokalna</option>
+            <option>Oferta wysłana</option>
+            <option>Umowa podpisana</option>
+            <option>W montażu</option>
+            <option>Zrealizowany</option>
+            <option>Odrzucony</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Wartość oferty (zł)</label><input class="form-control" id="l-value" placeholder="18000" type="number"></div>
+        <div class="form-group"><label class="form-label">Kolejny kontakt</label><input class="form-control" id="l-next" type="date"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Notatki</label><textarea class="form-control" id="l-notes" placeholder="Uwagi, ustalenia, informacje o kliencie..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('modal-lead')">Anuluj</button>
+      <button class="btn btn-primary" onclick="saveLead()">💾 Zapisz</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOWY MONTAŻ -->
+<div class="modal-backdrop" id="modal-montaz">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Nowy montaż</div>
+      <button class="modal-close" onclick="closeModal('modal-montaz')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Klient *</label><input class="form-control" id="m-client" placeholder="Jan Kowalski"></div>
+        <div class="form-group"><label class="form-label">Adres montażu *</label><input class="form-control" id="m-address" placeholder="Myślenice, ul. Polna 5"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Typ instalacji</label>
+          <select class="form-control" id="m-type">
+            <option>Złoże obrotowe (BioDisc)</option>
+            <option>Biologiczna SBR</option>
+            <option>Złoże fluidalne</option>
+            <option>Drenażowa</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Model urządzenia</label><input class="form-control" id="m-model" placeholder="Kingspan BioDisc BA 6RLM"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Planowana data</label><input class="form-control" id="m-date" type="date"></div>
+        <div class="form-group"><label class="form-label">Ekipa</label>
+          <select class="form-control" id="m-team">
+            <option>Adrian</option>
+            <option>Obaj</option>
+            <option>Zewnętrzna</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-control" id="m-status">
+            <option>Zaplanowany</option>
+            <option>Materiały zamówione</option>
+            <option>W trakcie</option>
+            <option>Zrealizowany</option>
+            <option>Opóźniony</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Zdjęcia</label>
+          <select class="form-control" id="m-photos">
+            <option>NIE ❌</option>
+            <option>TAK ✅</option>
+            <option>Częściowo</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Protokół odbioru</label>
+          <select class="form-control" id="m-protocol">
+            <option>NIE ❌</option>
+            <option>TAK ✅</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Uwagi</label><textarea class="form-control" id="m-notes" placeholder="Warunki gruntowe, uwagi techniczne..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('modal-montaz')">Anuluj</button>
+      <button class="btn btn-primary" onclick="saveMontaz()">💾 Zapisz</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOWY SERWIS -->
+<div class="modal-backdrop" id="modal-serwis">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Nowy przegląd serwisowy</div>
+      <button class="modal-close" onclick="closeModal('modal-serwis')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Klient *</label><input class="form-control" id="s-client" placeholder="Jan Kowalski"></div>
+        <div class="form-group"><label class="form-label">Telefon</label><input class="form-control" id="s-phone" placeholder="600 123 456"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Adres instalacji</label><input class="form-control" id="s-address" placeholder="Myślenice, ul. Polna 5"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Model urządzenia</label><input class="form-control" id="s-model" placeholder="BioDisc BA 4RLM"></div>
+        <div class="form-group"><label class="form-label">Data montażu</label><input class="form-control" id="s-install-date" type="date"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Data przeglądu</label><input class="form-control" id="s-review-date" type="date"></div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-control" id="s-status">
+            <option>Do umówienia</option>
+            <option>Umówiony</option>
+            <option>Wykonany</option>
+            <option>Przeterminowany</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Notatki</label><textarea class="form-control" id="s-notes" placeholder="Uwagi po przeglądzie..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('modal-serwis')">Anuluj</button>
+      <button class="btn btn-primary" onclick="saveSerwis()">💾 Zapisz</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const CLIENT_ID = '72105575883-4613o26bq11ke3ksjdqsl63v6no5np7u.apps.googleusercontent.com';
+const SHEET_ID = '16bH_1sb2S7PciMrEj1Yd13plEdqRJMFwNa4MTGytmME';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+const API_KEY = '';
+
+let tokenClient;
+let accessToken = null;
+let allLeady = [];
+let allMontaze = [];
+let allSerwis = [];
+
+// ═══════════════════════════════
+// AUTH
+// ═══════════════════════════════
+function initGoogle() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async (response) => {
+      if (response.error) { showToast('Błąd logowania: ' + response.error, 'error'); return; }
+      accessToken = response.access_token;
+      await getUserInfo();
+      showApp();
+      loadData();
+    }
+  });
+}
+
+async function signIn() {
+  tokenClient.requestAccessToken();
+}
+
+function signOut() {
+  google.accounts.oauth2.revoke(accessToken, () => {
+    accessToken = null;
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('auth-screen').style.display = 'flex';
+  });
+}
+
+async function getUserInfo() {
+  try {
+    const r = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    const u = await r.json();
+    const name = u.name || u.email || 'Użytkownik';
+    document.getElementById('user-name').textContent = name;
+    document.getElementById('user-initials').textContent = name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  } catch(e) {}
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+// ═══════════════════════════════
+// SHEETS API
+// ═══════════════════════════════
+async function sheetsGet(range) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}`;
+  const r = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
+  const d = await r.json();
+  return d.values || [];
+}
+
+async function sheetsAppend(range, values) {
+  setSyncing(true);
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values })
+  });
+  setSyncing(false);
+  return r.json();
+}
+
+async function sheetsUpdate(range, values) {
+  setSyncing(true);
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+  const r = await fetch(url, {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values })
+  });
+  setSyncing(false);
+  return r.json();
+}
+
+function setSyncing(active) {
+  const dot = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  if (active) {
+    dot.className = 'sync-dot syncing';
+    label.textContent = 'Synchronizacja...';
+  } else {
+    dot.className = 'sync-dot';
+    label.textContent = 'Zsynchronizowano';
+  }
+}
+
+// ═══════════════════════════════
+// LOAD DATA
+// ═══════════════════════════════
+async function loadData() {
+  try {
+    setSyncing(true);
+    const [leady, montaze, serwis] = await Promise.all([
+      sheetsGet('Leady!A2:P1000'),
+      sheetsGet('Montaze!A2:M1000'),
+      sheetsGet('Serwis!A2:K1000')
+    ]);
+    allLeady = leady.filter(r => r[1]);
+    allMontaze = montaze.filter(r => r[2]);
+    allSerwis = serwis.filter(r => r[1]);
+    setSyncing(false);
+    renderAll();
+    showToast('Dane zaktualizowane', 'success');
+  } catch(e) {
+    setSyncing(false);
+    showToast('Błąd ładowania danych', 'error');
+  }
+}
+
+function renderAll() {
+  renderStats();
+  renderKanban();
+  renderLeadyTable();
+  renderMontazeTable();
+  renderSerwisView();
+}
+
+// ═══════════════════════════════
+// STATS
+// ═══════════════════════════════
+function renderStats() {
+  const counts = { new:0, offer:0, signed:0, done:0 };
+  let signedVal = 0, doneVal = 0;
+  allLeady.forEach(r => {
+    const s = r[8] || '';
+    const v = parseFloat(r[9]) || 0;
+    if (s === 'Nowe zapytanie' || s === 'Kwalifikacja' || s === 'Wizja lokalna') counts.new++;
+    else if (s === 'Oferta wysłana') counts.offer++;
+    else if (s === 'Umowa podpisana' || s === 'W montażu') { counts.signed++; signedVal += v; }
+    else if (s === 'Zrealizowany') { counts.done++; doneVal += v; }
+  });
+  document.getElementById('s-new').textContent = counts.new;
+  document.getElementById('s-offer').textContent = counts.offer;
+  document.getElementById('s-signed').textContent = counts.signed;
+  document.getElementById('s-done').textContent = counts.done;
+  document.getElementById('s-signed-val').textContent = signedVal ? fmtVal(signedVal) : '—';
+  document.getElementById('s-done-val').textContent = doneVal ? fmtVal(doneVal) : '—';
+}
+
+// ═══════════════════════════════
+// KANBAN
+// ═══════════════════════════════
+const COLS = [
+  { id: 'new', title: 'Nowe', statuses: ['Nowe zapytanie','Kwalifikacja','Wizja lokalna'] },
+  { id: 'offer', title: 'Oferta', statuses: ['Oferta wysłana'] },
+  { id: 'signed', title: 'Umowa', statuses: ['Umowa podpisana'] },
+  { id: 'install', title: 'Montaż', statuses: ['W montażu'] },
+  { id: 'done', title: 'Zrealizowane', statuses: ['Zrealizowany'] },
+];
+
+function renderKanban() {
+  const board = document.getElementById('kanban-board');
+  board.innerHTML = COLS.map(col => {
+    const cards = allLeady.filter(r => col.statuses.includes(r[8] || ''));
+    return `<div class="kanban-col">
+      <div class="col-head"><span class="col-title">${col.title}</span><span class="col-count">${cards.length}</span></div>
+      ${cards.map(r => `<div class="kanban-card" onclick="editLead(${allLeady.indexOf(r)})">
+        <div class="k-name">${r[1] || '—'}</div>
+        <div class="k-loc">📍 ${r[4] || '—'}</div>
+        <div class="k-foot">
+          <span class="k-val">${r[9] ? fmtVal(r[9]) : '—'}</span>
+          <span class="badge ${statusBadge(r[8])}">${r[8] || '—'}</span>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════
+// LEADY TABLE
+// ═══════════════════════════════
+function renderLeadyTable(filter = '') {
+  const data = filter ? allLeady.filter(r => [r[1],r[2],r[4],r[8]].join(' ').toLowerCase().includes(filter.toLowerCase())) : allLeady;
+  const html = `<table>
+    <thead><tr><th>Klient</th><th>Telefon</th><th>Miejscowość</th><th>Typ instalacji</th><th>Wartość</th><th>Status</th><th>Kolejny kontakt</th><th></th></tr></thead>
+    <tbody>${data.map(r => {
+      const idx = allLeady.indexOf(r);
+      return `<tr>
+        <td class="td-name">${r[1]||'—'}</td>
+        <td><a href="tel:${r[2]}" style="color:var(--green)">${r[2]||'—'}</a></td>
+        <td class="td-muted">${r[4]||'—'}</td>
+        <td>${r[6]||'—'}</td>
+        <td style="font-weight:600;color:var(--green)">${r[9] ? fmtVal(r[9]) : '—'}</td>
+        <td><span class="badge ${statusBadge(r[8])}">${r[8]||'—'}</span></td>
+        <td class="td-muted">${r[11]||'—'}</td>
+        <td><button class="btn btn-sm" onclick="editLead(${idx})">✏️</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+  document.getElementById('leady-table-wrap').innerHTML = data.length ? html : '<div class="loading">Brak danych</div>';
+}
+
+function filterLeady() {
+  renderLeadyTable(document.getElementById('search-leady').value);
+}
+
+// ═══════════════════════════════
+// MONTAŻE TABLE
+// ═══════════════════════════════
+function renderMontazeTable() {
+  const html = `<table>
+    <thead><tr><th>Data</th><th>Klient</th><th>Adres</th><th>Typ</th><th>Ekipa</th><th>Status</th><th>Zdjęcia</th><th>Protokół</th></tr></thead>
+    <tbody>${allMontaze.map(r => `<tr>
+      <td style="font-weight:600">${r[6]||'—'}</td>
+      <td class="td-name">${r[2]||'—'}</td>
+      <td class="td-muted">${r[3]||'—'}</td>
+      <td>${r[4]||'—'}</td>
+      <td>${r[7]||'—'}</td>
+      <td><span class="badge ${montazBadge(r[8])}">${r[8]||'—'}</span></td>
+      <td style="color:${r[9]==='TAK ✅'?'var(--green)':'var(--red)'}">${r[9]||'—'}</td>
+      <td style="color:${r[10]==='TAK ✅'?'var(--green)':'var(--red)'}">${r[10]||'—'}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+  document.getElementById('montaze-table-wrap').innerHTML = allMontaze.length ? html : '<div class="loading">Brak montaży</div>';
+}
+
+// ═══════════════════════════════
+// SERWIS VIEW
+// ═══════════════════════════════
+function renderSerwisView() {
+  const today = new Date();
+  const urgent = allSerwis.filter(r => {
+    if (!r[6]) return false;
+    const d = new Date(r[6]);
+    const diff = Math.floor((d - today) / 86400000);
+    return diff < 30;
+  });
+
+  let alertsHtml = '';
+  if (urgent.length > 0) {
+    alertsHtml = `<div style="margin-bottom:16px">
+      <div style="font-size:14px;font-weight:600;margin-bottom:10px">⚠️ Wymagają kontaktu</div>
+      <div class="serwis-grid">
+        ${urgent.map(r => {
+          const d = new Date(r[6]);
+          const diff = Math.floor((d - today) / 86400000);
+          const cls = diff < 0 ? 'danger' : 'warn';
+          const dateLabel = diff < 0 ? `Przeterminowany ${Math.abs(diff)} dni` : `Za ${diff} dni`;
+          return `<div class="serwis-card ${cls}">
+            <div class="sc-name">${r[1]||'—'}</div>
+            <div class="sc-info">${r[3]||'—'}<br>${r[4]||'—'}</div>
+            <div class="sc-foot">
+              <span class="sc-date ${cls}">${dateLabel}</span>
+              <a href="tel:${r[2]}"><button class="btn btn-sm">📞 Zadzwoń</button></a>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+  document.getElementById('serwis-alerts').innerHTML = alertsHtml;
+
+  const html = `<table>
+    <thead><tr><th>Klient</th><th>Telefon</th><th>Lokalizacja</th><th>Model</th><th>Montaż</th><th>Przegląd</th><th>Dni</th><th>Status</th></tr></thead>
+    <tbody>${allSerwis.map(r => {
+      const today2 = new Date();
+      const d = r[6] ? new Date(r[6]) : null;
+      const diff = d ? Math.floor((d - today2) / 86400000) : null;
+      const diffLabel = diff !== null ? (diff < 0 ? `<span style="color:var(--red);font-weight:600">${diff}</span>` : `<span style="font-weight:600">${diff}</span>`) : '—';
+      return `<tr>
+        <td class="td-name">${r[1]||'—'}</td>
+        <td><a href="tel:${r[2]}" style="color:var(--green)">${r[2]||'—'}</a></td>
+        <td class="td-muted">${r[3]||'—'}</td>
+        <td>${r[4]||'—'}</td>
+        <td class="td-muted">${r[5]||'—'}</td>
+        <td>${r[6]||'—'}</td>
+        <td>${diffLabel}</td>
+        <td><span class="badge ${serwisBadge(r[8])}">${r[8]||'—'}</span></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+  document.getElementById('serwis-table-wrap').innerHTML = allSerwis.length ? html : '<div class="loading">Brak przeglądów</div>';
+}
+
+// ═══════════════════════════════
+// SAVE LEAD
+// ═══════════════════════════════
+function openNewLead() {
+  document.getElementById('lead-row-id').value = '';
+  document.getElementById('modal-lead-title').textContent = 'Nowy lead';
+  ['l-name','l-phone','l-email','l-city','l-notes','l-value'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('l-next').value = '';
+  document.getElementById('l-status').value = 'Nowe zapytanie';
+  document.getElementById('modal-lead').classList.add('open');
+}
+
+function editLead(idx) {
+  const r = allLeady[idx];
+  if (!r) return;
+  document.getElementById('lead-row-id').value = idx + 2;
+  document.getElementById('modal-lead-title').textContent = 'Edytuj lead';
+  document.getElementById('l-name').value = r[1] || '';
+  document.getElementById('l-phone').value = r[2] || '';
+  document.getElementById('l-email').value = r[3] || '';
+  document.getElementById('l-city').value = r[4] || '';
+  document.getElementById('l-source').value = r[5] || 'Facebook Ads';
+  document.getElementById('l-type').value = r[6] || 'Do ustalenia';
+  document.getElementById('l-rlm').value = r[7] || 'Do ustalenia';
+  document.getElementById('l-status').value = r[8] || 'Nowe zapytanie';
+  document.getElementById('l-value').value = r[9] || '';
+  document.getElementById('l-next').value = r[11] || '';
+  document.getElementById('l-notes').value = r[14] || '';
+  document.getElementById('modal-lead').classList.add('open');
+}
+
+async function saveLead() {
+  const name = document.getElementById('l-name').value.trim();
+  if (!name) { showToast('Wpisz imię i nazwisko', 'error'); return; }
+  const rowId = document.getElementById('lead-row-id').value;
+  const today = new Date().toLocaleDateString('pl-PL');
+  const values = [[
+    rowId ? '' : `L${String(allLeady.length + 1).padStart(3,'0')}`,
+    name,
+    document.getElementById('l-phone').value,
+    document.getElementById('l-email').value,
+    document.getElementById('l-city').value,
+    document.getElementById('l-source').value,
+    document.getElementById('l-type').value,
+    document.getElementById('l-rlm').value,
+    document.getElementById('l-status').value,
+    document.getElementById('l-value').value,
+    rowId ? '' : today,
+    document.getElementById('l-next').value,
+    '', '',
+    document.getElementById('l-notes').value
+  ]];
+  try {
+    if (rowId) {
+      await sheetsUpdate(`Leady!A${rowId}:O${rowId}`, values);
+      showToast('Lead zaktualizowany ✅', 'success');
+    } else {
+      await sheetsAppend('Leady!A:O', values);
+      showToast('Lead dodany ✅', 'success');
+    }
+    closeModal('modal-lead');
+    await loadData();
+  } catch(e) { showToast('Błąd zapisu', 'error'); }
+}
+
+// ═══════════════════════════════
+// SAVE MONTAZ
+// ═══════════════════════════════
+function openNewMontaz() {
+  ['m-client','m-address','m-model','m-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-date').value = '';
+  document.getElementById('modal-montaz').classList.add('open');
+}
+
+async function saveMontaz() {
+  const client = document.getElementById('m-client').value.trim();
+  if (!client) { showToast('Wpisz nazwę klienta', 'error'); return; }
+  const values = [[
+    `M${String(allMontaze.length + 1).padStart(3,'0')}`,
+    '',
+    client,
+    document.getElementById('m-address').value,
+    document.getElementById('m-type').value,
+    document.getElementById('m-model').value,
+    document.getElementById('m-date').value,
+    document.getElementById('m-team').value,
+    document.getElementById('m-status').value,
+    document.getElementById('m-photos').value,
+    document.getElementById('m-protocol').value,
+    '',
+    document.getElementById('m-notes').value
+  ]];
+  try {
+    await sheetsAppend('Montaze!A:M', values);
+    showToast('Montaż dodany ✅', 'success');
+    closeModal('modal-montaz');
+    await loadData();
+  } catch(e) { showToast('Błąd zapisu', 'error'); }
+}
+
+// ═══════════════════════════════
+// SAVE SERWIS
+// ═══════════════════════════════
+function openNewSerwis() {
+  ['s-client','s-phone','s-address','s-model','s-notes'].forEach(id => document.getElementById(id).value = '');
+  ['s-install-date','s-review-date'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('modal-serwis').classList.add('open');
+}
+
+async function saveSerwis() {
+  const client = document.getElementById('s-client').value.trim();
+  if (!client) { showToast('Wpisz nazwę klienta', 'error'); return; }
+  const values = [[
+    `S${String(allSerwis.length + 1).padStart(3,'0')}`,
+    client,
+    document.getElementById('s-phone').value,
+    document.getElementById('s-address').value,
+    document.getElementById('s-model').value,
+    document.getElementById('s-install-date').value,
+    document.getElementById('s-review-date').value,
+    '',
+    document.getElementById('s-status').value,
+    '',
+    document.getElementById('s-notes').value
+  ]];
+  try {
+    await sheetsAppend('Serwis!A:K', values);
+    showToast('Przegląd dodany ✅', 'success');
+    closeModal('modal-serwis');
+    await loadData();
+  } catch(e) { showToast('Błąd zapisu', 'error'); }
+}
+
+// ═══════════════════════════════
+// HELPERS
+// ═══════════════════════════════
+function showView(id, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('v-' + id).classList.add('active');
+  el.classList.add('active');
+  const titles = { pipeline: 'Lejek sprzedaży', leady: 'Klienci i leady', montaze: 'Montaże', serwis: 'Serwis i przeglądy' };
+  document.getElementById('topbar-title').textContent = titles[id];
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+function statusBadge(s) {
+  if (!s) return 'b-new';
+  if (['Nowe zapytanie','Kwalifikacja'].includes(s)) return 'b-new';
+  if (s === 'Wizja lokalna') return 'b-offer';
+  if (s === 'Oferta wysłana') return 'b-offer';
+  if (s === 'Umowa podpisana') return 'b-signed';
+  if (s === 'W montażu') return 'b-install';
+  if (s === 'Zrealizowany') return 'b-done';
+  return 'b-new';
+}
+
+function montazBadge(s) {
+  if (s === 'Zrealizowany') return 'b-done';
+  if (s === 'W trakcie') return 'b-install';
+  if (s === 'Opóźniony') return 'b-overdue';
+  return 'b-new';
+}
+
+function serwisBadge(s) {
+  if (s === 'Wykonany') return 'b-done';
+  if (s === 'Umówiony') return 'b-signed';
+  if (s === 'Przeterminowany') return 'b-overdue';
+  return 'b-offer';
+}
+
+function fmtVal(v) {
+  return new Intl.NumberFormat('pl-PL', { style: 'currency', currency: 'PLN', maximumFractionDigits: 0 }).format(v);
+}
+
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+window.addEventListener('load', () => {
+  if (typeof google !== 'undefined') {
+    initGoogle();
+  } else {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = initGoogle;
+    document.head.appendChild(script);
+  }
+});
+</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</body>
+</html>
